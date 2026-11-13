@@ -1,0 +1,734 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Evacuation Readiness Assessment</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Evac Assessment">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#1d6b45">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: field tool. Sticky header + step rail (left on iPad landscape, top strip on narrow). Exit-sign green accent, signal amber/red for gaps. */
+:root{
+  --bg:#f3f5f2; --surface:#ffffff; --surface-2:#e9eee9; --line:#cdd6ce; --fg:#16211b; --muted:#56655b;
+  --accent:#1d6b45; --accent-ink:#ffffff; --accent-soft:#dcefe3;
+  --ok:#1d6b45; --warn:#a86300; --warn-soft:#fbecd2; --bad:#b3261e; --bad-soft:#f8dcd9;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1512; --surface:#16201b; --surface-2:#1d2a23; --line:#2d3d34; --fg:#e6eee8; --muted:#97a89d;
+  --accent:#4fbf86; --accent-ink:#06130c; --accent-soft:#18392a;
+  --ok:#4fbf86; --warn:#f0a43a; --warn-soft:#3a2b12; --bad:#f2766c; --bad-soft:#3d1a18; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1512; --surface:#16201b; --surface-2:#1d2a23; --line:#2d3d34; --fg:#e6eee8; --muted:#97a89d;
+  --accent:#4fbf86; --accent-ink:#06130c; --accent-soft:#18392a;
+  --ok:#4fbf86; --warn:#f0a43a; --warn-soft:#3a2b12; --bad:#f2766c; --bad-soft:#3d1a18; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+img{max-width:100%}
+html{-webkit-text-size-adjust:100%}
+body{margin:0}
+.homenote{font-size:13px;color:var(--muted);margin:0;max-width:68ch}
+@media print{.top,.rail,body::before,.noprint,main>.row:last-child{display:none!important}.shell{display:block;padding:0}body,html{background:#fff}.report{border:0;padding:0}.rsec,.tablewrap,.bars,.verdict,.photos figure{break-inside:avoid}}
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:var(--body);font-size:15px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+h1,h2,h3{font-family:var(--display);letter-spacing:.01em;text-wrap:balance;margin:0;line-height:1.1}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.top-in{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand .mark{width:30px;height:30px;border-radius:6px;background:var(--accent);display:grid;place-items:center;flex:none}
+.brand .mark svg{width:20px;height:20px}
+.brand b{font-family:var(--display);font-size:20px;font-weight:700;letter-spacing:.02em;text-transform:uppercase}
+.brand span{color:var(--muted);font-size:13px;display:block;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.spacer{flex:1}
+.status{font-family:var(--mono);font-size:12px;padding:4px 8px;border-radius:999px;background:var(--surface-2);color:var(--muted);white-space:nowrap}
+.status.ok{color:var(--ok)} .status.warn{color:var(--warn);background:var(--warn-soft)}
+.btn{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-weight:500}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn.small{min-height:32px;padding:0 10px;font-size:13px}
+.btn[disabled]{opacity:.5;cursor:default}
+.shell{display:grid;grid-template-columns:220px minmax(0,1fr);gap:24px;padding-block:20px 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-width:1280px;margin:0 auto}
+.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 76px);align-self:start;display:flex;flex-direction:column;gap:4px}
+.rail button{display:flex;gap:10px;align-items:baseline;text-align:left;background:none;border:0;border-radius:8px;padding:10px 12px;cursor:pointer;color:var(--muted)}
+.rail button .q{font-family:var(--display);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.08em;min-width:44px;color:var(--accent)}
+.rail button[aria-current="true"]{background:var(--accent-soft);color:var(--fg);font-weight:600}
+.rail .sep{height:1px;background:var(--line);margin:8px 4px}
+@media (max-width:860px){
+  .shell{grid-template-columns:minmax(0,1fr)}
+  .rail{position:static;flex-direction:row;overflow-x:auto;gap:4px;padding-bottom:4px}
+  .rail button{flex:none;flex-direction:column;gap:0;padding:8px 10px}
+  .rail .sep{display:none}
+}
+main{min-width:0;display:flex;flex-direction:column;gap:20px}
+.pagehead{display:flex;flex-direction:column;gap:6px}
+.eyebrow{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:13px;color:var(--accent)}
+.pagehead h1{font-size:34px;font-weight:700}
+.pagehead p{margin:0;color:var(--muted);max-width:68ch}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.panel h2{font-size:22px;font-weight:600}
+.panel .hint{color:var(--muted);font-size:13px;margin:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.grid.wide{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.f{display:flex;flex-direction:column;gap:5px;min-width:0}
+.f>label,.lbl{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+input[type=text],input[type=number],input[type=date],select,textarea{width:100%;min-height:42px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+textarea{min-height:76px;resize:vertical}
+input[type=number]{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;background:var(--bg);padding:0 12px;min-height:40px;cursor:pointer;border-right:1px solid var(--line);font-size:14px}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.seg button.okv[aria-pressed="true"]{background:var(--ok);color:var(--accent-ink)}
+.seg button.warnv[aria-pressed="true"]{background:var(--warn);color:#fff}
+.seg button.badv[aria-pressed="true"]{background:var(--bad);color:#fff}
+.stepper{display:flex;align-items:stretch;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--bg)}
+.stepper button{width:42px;border:0;background:var(--surface-2);cursor:pointer;font-size:20px;line-height:1}
+.stepper input{border:0;border-radius:0;text-align:center;min-width:0;background:transparent}
+.checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
+.chk{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:8px;cursor:pointer;background:var(--bg)}
+.chk input{width:20px;height:20px;margin:1px 0 0;accent-color:var(--accent);flex:none}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.rowq{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 16px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.rowq:first-of-type{border-top:0}
+@media (max-width:560px){.rowq{grid-template-columns:minmax(0,1fr)}}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+/* home */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.acard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px;cursor:pointer;text-align:left}
+.acard:hover{border-color:var(--accent)}
+.acard h3{font-size:22px}
+.acard .meta{color:var(--muted);font-size:13px}
+.tag{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:4px;background:var(--warn-soft);color:var(--warn);text-transform:uppercase;letter-spacing:.05em}
+.empty{border:2px dashed var(--line);border-radius:12px;padding:32px;text-align:center;color:var(--muted);display:flex;flex-direction:column;gap:12px;align-items:center}
+/* floors */
+.btabs{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.btabs button.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.floor{border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+.floor>summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 16px}
+.floor>summary::-webkit-details-marker{display:none}
+.lvl{font-family:var(--display);font-weight:700;font-size:28px;text-align:center;background:var(--surface-2);border-radius:8px;padding:4px 0;line-height:1.1}
+.lvl small{display:block;font-size:10px;letter-spacing:.1em;color:var(--muted)}
+.fsum{display:flex;gap:6px;flex-wrap:wrap;font-size:13px}
+.chip{font-family:var(--mono);font-size:12px;padding:3px 8px;border-radius:999px;background:var(--surface-2);white-space:nowrap}
+.chip.bad{background:var(--bad-soft);color:var(--bad)} .chip.warn{background:var(--warn-soft);color:var(--warn)} .chip.ok{background:var(--accent-soft);color:var(--ok)}
+.fbody{border-top:1px solid var(--line);padding:16px;display:flex;flex-direction:column;gap:18px}
+.fsec{display:flex;flex-direction:column;gap:10px}
+.fsec>h3{font-size:17px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.cam{cursor:pointer;color:var(--fg);position:relative}
+.cam:focus-within{outline:3px solid var(--accent);outline-offset:2px}
+.imp>.thumbs{grid-column:1/-1}
+.thumbs{display:flex;gap:8px;flex-wrap:wrap}
+.thumb{position:relative;width:112px;height:84px;border-radius:8px;overflow:hidden;background:var(--surface-2);border:1px solid var(--line)}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb.broken img{display:none}.thumb.broken::after{content:"Photo unavailable";position:absolute;inset:0;display:grid;place-items:center;font-size:11px;color:var(--muted);text-align:center}
+.thumb.busy{display:grid;place-items:center;font-size:12px;color:var(--muted)}
+.thumbx{position:absolute;top:4px;right:4px;width:28px;height:28px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;cursor:pointer;font-size:16px;line-height:1}
+.thumbconfirm{position:absolute;inset:0;background:var(--surface);flex-direction:column;justify-content:center;gap:4px;padding:4px}
+.thumbconfirm .btn{min-height:26px;font-size:11px;padding:0 6px}
+.photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.photos figure{margin:0;display:flex;flex-direction:column;gap:6px;break-inside:avoid}
+.photos img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;border:1px solid var(--line);background:var(--surface-2)}
+.photos img[data-missing]{display:none}
+.photos figcaption{font-size:13px;color:var(--muted)}
+.photos figcaption b{color:var(--fg)}
+.blist{display:flex;flex-direction:column;gap:10px}
+.brow{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:10px;align-items:end}
+.unit{display:grid;grid-template-columns:minmax(0,1fr) 140px 40px;gap:8px;align-items:center}
+@media (max-width:520px){.unit{grid-template-columns:minmax(0,1fr) 110px 40px}}
+.iconbtn{width:40px;height:40px;border:1px solid var(--line);border-radius:8px;background:var(--bg);cursor:pointer;display:grid;place-items:center}
+.imp{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.imp:first-child{border-top:0}
+@media (max-width:620px){.imp{grid-template-columns:minmax(0,1fr)}}
+.calcbox{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;background:var(--surface-2);border-radius:10px;padding:12px}
+.calcbox div b{display:block;font-family:var(--mono);font-size:20px;font-weight:500}
+.calcbox div span{font-size:12px;color:var(--muted)}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+td:has(>input),td:has(>.iconbtn),td:has(>.confirm){vertical-align:middle}
+tr:has(input) td{vertical-align:middle}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:var(--surface-2);font-weight:600}
+td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14px;z-index:20}
+/* report */
+.report{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:28px;display:flex;flex-direction:column;gap:26px;min-width:0}
+.rep-head{display:flex;flex-direction:column;gap:6px;border-bottom:3px solid var(--accent);padding-bottom:16px}
+.rep-head h1{font-size:38px}
+.rep-head .meta{color:var(--muted);font-size:14px}
+.verdict{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;align-items:center}
+.dial{width:112px;height:112px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:40px;border:8px solid var(--line);flex:none}
+.verdict h2{font-size:26px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+.tile{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:2px}
+.tile b{font-family:var(--mono);font-size:24px;font-weight:500}
+.tile span{font-size:12px;color:var(--muted)}
+.bars{display:flex;flex-direction:column;gap:10px}
+.bar{display:grid;grid-template-columns:150px minmax(0,1fr) 48px;gap:12px;align-items:center;font-size:14px}
+.bar .track{height:12px;background:var(--surface-2);border-radius:6px;overflow:hidden}
+.bar .fill{height:100%;border-radius:6px}
+@media (max-width:520px){.bar{grid-template-columns:100px minmax(0,1fr) 40px}}
+.rsec{display:flex;flex-direction:column;gap:10px}
+.rsec>h2{font-size:26px;display:flex;gap:12px;align-items:baseline}
+.rsec>h2 .w{font-family:var(--display);color:var(--accent);text-transform:uppercase;letter-spacing:.08em;font-size:16px;min-width:56px}
+.rsec p{margin:0;max-width:72ch}
+.rsec ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+.qa{display:grid;grid-template-columns:minmax(160px,240px) minmax(0,1fr);gap:6px 18px;font-size:14px}
+.qa dt{color:var(--muted);font-weight:600}
+.qa dd{margin:0}
+@media (max-width:560px){.qa{grid-template-columns:minmax(0,1fr)}.qa dd{margin-bottom:8px}}
+.recs{display:flex;flex-direction:column;gap:8px}
+.rec{display:grid;grid-template-columns:86px minmax(0,1fr);gap:12px;align-items:baseline;padding:10px 12px;border-radius:8px;background:var(--bg)}
+.pri{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;padding:2px 6px;border-radius:4px;text-align:center}
+.pri.p1{background:var(--bad-soft);color:var(--bad)} .pri.p2{background:var(--warn-soft);color:var(--warn)} .pri.p3{background:var(--accent-soft);color:var(--ok)}
+.note{font-size:12px;color:var(--muted)}
+.missing{color:var(--warn);font-style:italic}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="top"><div class="top-in">
+  <div class="brand"><div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="color:var(--accent-ink)"><path d="M4 20h4v-4h4v-4h4V8h4"/><path d="M14 4h6v6"/></svg></div>
+    <div style="min-width:0"><b>Evacuation Readiness</b><span id="hdrTitle">Ethos Preparedness · Single-Flow Evacuation Assessment</span></div></div>
+  <div class="spacer"></div>
+  <span class="status" id="status">Loading…</span>
+  <button class="btn small" id="homeBtn" data-act="home" hidden>All assessments</button>
+</div></div>
+
+<div id="app"></div>
+<input type="file" id="importFile" accept=".json,application/json" hidden>
+
+<script>
+/* ============ Reference data (from Detailed Hospital Evacuation Readiness Assessment, 2020) ============ */
+const CLASSES=[
+ {k:'icu',name:'ICU',pct:1},{k:'pacu',name:'PACU',pct:1},{k:'or',name:'OR / Trauma',pct:1},{k:'periop',name:'Post-Op / Pre-Op',pct:1},
+ {k:'ante',name:'Antepartum',pct:.75},{k:'ld',name:'Labor & Delivery',pct:.5},{k:'post',name:'Postpartum',pct:.5},
+ {k:'neo',name:'Neonatal (6 infants / sled)',pct:.15,peds:1},{k:'nicu',name:'NICU',pct:.75,peds:1},{k:'picu',name:'PICU (6 mo – 2 yrs)',pct:1,peds:1},
+ {k:'cardio',name:'Cardio / Telemetry',pct:.5},{k:'ortho',name:'Orthopedic Surgical',pct:.5},{k:'genmed',name:'General Medical / Acute Care',pct:.3},
+ {k:'surg',name:'Surgical',pct:.75},{k:'resp',name:'Respiratory',pct:.5},{k:'onc',name:'Oncology / Endocrine',pct:.75},
+ {k:'snf',name:'Skilled Nursing / Hospice',pct:.75},{k:'er',name:'Emergency (trauma rooms)',pct:1},{k:'rehab',name:'Rehab / Physical Therapy',pct:.3},
+ {k:'psyA',name:'Psychiatric – Adult',pct:.2},{k:'psyE',name:'Psychiatric – Elderly',pct:.5},
+ {k:'neuro',name:'Neurosciences (EEG, Radiology)',pct:0,perExit:2},{k:'rad',name:'Radiology / Nuclear Med / Imaging',pct:0,perExit:2},
+ {k:'psyY',name:'Psychiatric – Adolescent',pct:0,perExit:2},{k:'wound',name:'Wound Care',pct:0,perExit:2},
+ {k:'office',name:'Offices / Admin / Support',pct:0,perExit:1}
+];
+const grp=c=>c.group||'health';
+const SPACES={work:['Open office / workstations','Private offices / conference rooms','Lobby / reception / public areas','Manufacturing / warehouse / shop floor','Laboratory / R&D','Cafeteria / assembly / event space','Fitness center','Onsite clinic / first-aid room','Data center / mechanical / storage','Mixed use','Other'],
+ college:['Lecture halls / classrooms','Residence halls','Laboratories / research','Library / study spaces','Student union / dining','Athletics / recreation center','Student health center','Faculty and administrative offices','Performing arts / auditorium','Mechanical / storage / support','Mixed use','Other'],
+ school:['General classrooms','Early childhood / Pre-K / kindergarten','Special education / life skills','Science labs / career-tech shops','Gymnasium / athletics','Auditorium / cafeteria / assembly','Library / media center','Nurse’s office / health room','Administration / staff offices','Mechanical / storage / support','Mixed use','Other']};
+const spacesFor=(A,G)=>G==='school'&&A.facility.type==='College / University'?SPACES.college:SPACES[G];
+const DEF_PEOPLE={census:1,pct:.03,bari:.1};
+const peopleRates=A=>(A.assumptions&&A.assumptions.people)||DEF_PEOPLE;
+function groupOf(A){const t=A&&A.facility&&A.facility.type;return (t==='School (K-12)'||t==='College / University'||t==='School')?'school':t==='Company'?'work':'health'}
+const GROUP_TXT={health:{h2:'Non-ambulatory rate by care class',cls:'Care class',cen:'Census %',unit:'Licensed beds',walkH:'Who is here — beds by patient care class',
+   walkHint:'Enter licensed beds per unit. Each care class’s daily census % (Assumptions tab) converts them to occupied beds; percentages shown are the non-ambulatory assumptions; “/exit” classes use sleds per stairwell instead of beds.',
+   method:'licensed beds × daily census % × non-ambulatory rate per care class (or sleds per stairwell for imaging, wound care, adolescent psychiatry, neurosciences and non-patient areas)'},
+ work:{h2:'Non-ambulatory rate',cls:'Space type',cen:'Occupancy %',unit:'Occupants',walkH:'Who is here',
+   walkHint:'Choose the floor’s main use and enter the number of people it normally holds, staff plus visitors. The occupancy %, non-ambulatory and bariatric rates on the Assumptions tab apply to everyone.',
+   method:'occupants × occupancy % × non-ambulatory rate'},
+ school:{h2:'Non-ambulatory rate',cls:'Space type',cen:'Attendance %',unit:'Occupants',walkH:'Who is here',
+   walkHint:'Choose the floor’s main use and enter the number of students and staff it normally holds. The attendance %, non-ambulatory and bariatric rates on the Assumptions tab apply to everyone.',
+   method:'occupants × attendance % × non-ambulatory rate'}};
+const DEF_TEXT="Single-flow evacuation moves every occupant of a building out in one continuous, coordinated operation: ambulatory, injured, and non-ambulatory people alike. No one is left in a stairwell or refuge area to wait for outside rescue. Staff on site identify who needs help, deploy evacuation equipment, carry people down the stairs, and account for everyone at the assembly area.";
+const NONAMB_DEF="A non-ambulatory person is anyone who cannot safely evacuate themselves — potentially over debris-filled hallways, down stairs and out of the building — in a timely fashion, without assistance, and without posing a risk to themselves or others.";
+const IMPEDIMENTS=[
+ ['shelving','Unsecured shelving, bookcases or cabinets along the route'],
+ ['overhead','Ceiling tiles, fixtures or overhead items that could fall'],
+ ['clutter','Carts, beds or equipment stored in corridors'],
+ ['width','Corridor and door widths allow a loaded sled to turn'],
+ ['doors','Fire doors and hardware operate and are unobstructed'],
+ ['rail','Stairwell handrails sturdy enough for anchoring'],
+ ['landing','Stair landings clear and large enough for a sled turn'],
+ ['lighting','Egress lighting / photoluminescent markings'],
+ ['signs','Exit and evacuation route signage visible']
+];
+const HAZARDS=[
+ ['earthquake','Earthquake','Earthquakes strike without warning, can damage stairwells and corridors, knock out power and elevators, and injure many people at once across a whole region. This is the scenario where staff-led evacuation with equipment matters most.'],
+ ['tornado','Tornado / severe wind','Tornado damage can compromise the structure and disable elevators. Evacuation follows the storm, often through debris.'],
+ ['hurricane','Hurricane','Hurricanes usually give advance warning, so evacuation is more often planned, but flooding and power loss can still disable elevators.'],
+ ['wildfire','Wildfire / smoke','Approaching fire and smoke can force a rapid evacuation with little notice.'],
+ ['flood','Flood','Flooding can disable ground-level power, elevators and exits.'],
+ ['fire','Internal fire','Fire is the most common trigger for an immediate evacuation of affected floors. Elevators are not available.'],
+ ['threat','Active threat / bomb threat','Human-caused events can require rapid evacuation of selected floors or the whole building.'],
+ ['utility','Extended utility failure','Long power or water outages can disable elevators and life-safety systems and force a stair evacuation.']
+];
+const SELF_EVAC=[
+ ['fire','Fire or smoke on or near the floor'],['struct','Visible structural damage after an event'],['gas','Gas leak or hazardous materials release'],
+ ['water','Flooding or water intrusion'],['systems','Loss of life-safety systems that cannot be restored'],['ic','Order from the Incident Commander'],
+ ['threat','Credible threat to occupants']
+];
+const SUPPLIES=[['water','Drinking water'],['warmth','Shelter, dryness and warmth'],['medical','Medical supplies for continued care'],['power','Portable power / oxygen'],['comms','Communications (radios)'],['rollcall','Roll-call / tracking materials']];
+
+function defClass(c,bari){return{...c,census:1,bari:bari==null?(grp(c)==='health'?.2:.1):bari,crit:grp(c)==='health'&&c.pct===1}}
+function defaultAssumptions(){return{people:{...DEF_PEOPLE},classes:CLASSES.map(c=>defClass(c)),coverage:1,landingMin:.5,prepMin:1.5,transportMin:1.5,positionMin:10,deployMin:2.5,critBariShare:1,obesityRate:.2,minSledsPerExit:1,peoplePerLanding:1,buffer:.25,definition:DEF_TEXT}}
+const uid=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);
+function newFloor(level){return{id:uid(),level,label:'',spaceType:'',occupants:0,units:[],stairwells:2,staffDay:0,staffNight:0,trainedDay:0,trainedNight:0,onHandStd:0,onHandBari:0,onHandPeds:0,storage:'',storageNearStair:null,storageSigned:null,routeSigned:null,wardenDay:null,wardenNight:null,bariatricPts:0,imp:{},notes:''}}
+function newAssessment(){const now=new Date().toISOString();return{id:uid(),schema:1,createdAt:now,updatedAt:now,example:false,
+ facility:{name:'',address:'',type:'Acute care hospital',assessor:'',date:(d=>new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10))(new Date()),contact:'',contactTitle:'',notes:''},
+ hazards:{},ems:{normalMin:'',disasterWait:'',partner:'',mutualAid:null},
+ who:{activation:'',automated:null,ics:null,sweep:'',operators:'',wardenRole:'',ertRole:'',securityRole:'',plan:null,drills:''},
+ when:{criteria:[],waitCriteria:'',horizontal:null,notes:''},
+ where:{ambAssembly:'',critAssembly:'',supplies:[],routesPosted:null,maps:null,transfer:''},
+ training:{turnoverPct:20,crews:4.2,refresherMonths:12,classSize:12,currentTrained:'',trainer:null,lms:null,lastTraining:''},
+ buildings:[],
+ assumptions:defaultAssumptions()}}
+
+/* ============ Calculations ============ */
+const num=v=>{const n=parseFloat(v);return isFinite(n)?n:0};
+function clsOf(A,k){return A.assumptions.classes.find(c=>c.k===k)}
+function floorCalc(A,f){
+  const as=A.assumptions;let nonAmb=0,bariN=0,perExit=0,beds=0,peds=0,patientBeds=0,occupied=0;
+  const stairs=Math.max(0,Math.round(num(f.stairwells)));
+  if(groupOf(A)!=='health'){const P=peopleRates(A);const occ=num(f.occupants);beds=occ;patientBeds=occ;occupied=occ*num(P.census);nonAmb=occupied*num(P.pct)*num(as.coverage);bariN=nonAmb*num(P.bari)}
+  else for(const u of f.units){const c=clsOf(A,u.k);if(!c)continue;const b=num(u.beds);beds+=b;
+    const cen=c.census==null?1:num(c.census),bs=c.crit?1:num(c.bari);
+    if(c.perExit){const pe=c.perExit*stairs;perExit+=pe;bariN+=pe*bs}else{patientBeds+=b;occupied+=b*cen;const n=b*cen*num(c.pct)*num(as.coverage);nonAmb+=n;bariN+=n*bs}
+    if(c.peds)peds+=b}
+  let sleds=Math.round(nonAmb)+perExit;sleds=Math.max(sleds,stairs*num(as.minSledsPerExit));
+  let bari=Math.round(bariN);bari=Math.max(bari,Math.round(num(f.bariatricPts)));bari=Math.min(bari,sleds);
+  const std=sleds-bari;const haveStd=num(f.onHandStd),haveBari=num(f.onHandBari);
+  const bariGap=Math.max(0,bari-haveBari);const stdGap=Math.max(0,std-haveStd-Math.max(0,haveBari-bari));
+  const gap=bariGap+stdGap;const covered=sleds-gap;
+  const teamsPerStair=Math.max(1,Math.ceil(num(as.prepMin)/(2*num(as.landingMin)||1)));
+  const demand=Math.ceil(nonAmb-1e-9)+perExit;
+  const teams=demand>0?Math.min(demand,Math.max(1,stairs)*teamsPerStair):Math.max(1,stairs);
+  const rescuers=teams*2;
+  const landings=2*Math.abs(Math.round(num(f.level))-1);
+  const noNight=num(f.staffNight)===0&&num(f.staffDay)>0;
+  return{nonAmb,occupied,perExit,beds,patientBeds,peds,stairs,sleds,bari,std,gap,bariGap,covered,rescuers,teams,landings,
+    dayShort:Math.max(0,rescuers-num(f.trainedDay)),nightShort:noNight?0:Math.max(0,rescuers-num(f.trainedNight)),noNight,demand}
+}
+function buildingCalc(A,b){
+  const as=A.assumptions;const fl=b.floors.map(f=>({f,c:floorCalc(A,f)}));
+  const above=fl.filter(x=>Math.round(num(x.f.level))!==1);
+  const stairs=Math.max(0,...(above.length?above:fl).map(x=>x.c.stairs));
+  const withDemand=fl.filter(x=>x.c.demand>0);
+  const top=withDemand.length?Math.max(...withDemand.map(x=>Math.abs(Math.round(num(x.f.level))-1)+1)):1;
+  const landings=2*(top-1);
+  const extractTeams=Math.max(1,Math.ceil(num(as.transportMin)/(2*num(as.landingMin)||1)));
+  const stairCrew=stairs*(landings*num(as.peoplePerLanding)+extractTeams*2);
+  const nonAmb=fl.reduce((s,x)=>s+x.c.nonAmb,0);const demand=fl.reduce((s,x)=>s+x.c.demand,0);
+  let time=null;if(stairs>0&&demand>0){time=num(as.positionMin)+Math.ceil(demand/stairs)*2*num(as.landingMin)+landings*num(as.landingMin)+num(as.transportMin)}
+  const floorRescuers=fl.reduce((s,x)=>s+x.c.rescuers,0);
+  return{fl,stairs,top,landings,extractTeams,stairCrew,nonAmb,demand,time,floorRescuers,perShift:floorRescuers+stairCrew,
+    sleds:fl.reduce((s,x)=>s+x.c.sleds,0),bari:fl.reduce((s,x)=>s+x.c.bari,0),gap:fl.reduce((s,x)=>s+x.c.gap,0),
+    onHand:fl.reduce((s,x)=>s+num(x.f.onHandStd)+num(x.f.onHandBari),0),
+    trainedDay:fl.reduce((s,x)=>s+num(x.f.trainedDay),0),trainedNight:fl.reduce((s,x)=>s+num(x.f.trainedNight),0)}
+}
+function facilityCalc(A){
+  const bs=A.buildings.map(b=>({b,c:buildingCalc(A,b)}));
+  const sum=k=>bs.reduce((s,x)=>s+x.c[k],0);
+  const perShift=sum('perShift');const T=A.training;
+  const roster=Math.ceil(perShift*Math.max(1,num(T.crews)));
+  const monthlyLoss=num(T.turnoverPct)/100/12;const refresher=Math.max(1,num(T.refresherMonths)||12);
+  let cadence=refresher;if(monthlyLoss>0){const m=num(A.assumptions.buffer)/monthlyLoss;cadence=[12,6,3,1].find(x=>x<=m)||1;cadence=Math.min(cadence,refresher)}
+  const target=Math.ceil(roster*(1+num(A.assumptions.buffer)));
+  const seats=Math.ceil(target*(12/refresher)+target*num(T.turnoverPct)/100);
+  const sessions=Math.ceil(seats/Math.max(1,num(T.classSize)||12));
+  const times=bs.map(x=>x.c.time).filter(t=>t!=null);
+  return{bs,nonAmb:sum('nonAmb'),demand:sum('demand'),sleds:sum('sleds'),bari:sum('bari'),gap:sum('gap'),onHand:sum('onHand'),
+    perShift,stairCrew:sum('stairCrew'),floorRescuers:sum('floorRescuers'),trainedDay:sum('trainedDay'),trainedNight:sum('trainedNight'),
+    roster,target,cadence,seats,sessions,maxTime:times.length?Math.max(...times):null,
+    floors:bs.reduce((s,x)=>s+x.b.floors.length,0)}
+}
+function scores(A,F){
+  const out={};
+  // Planning
+  const W=A.who,Wh=A.when,Wr=A.where;
+  const plan=[W.plan===true,!!W.activation.trim(),!!W.sweep.trim(),!!W.operators.trim(),num(W.drills)>=1,(Wh.criteria||[]).length>=2,!!Wh.waitCriteria.trim(),
+    !!Wr.ambAssembly.trim(),!!Wr.critAssembly.trim(),(Wr.supplies||[]).length>=4,!!(Wr.transfer.trim()||A.ems.partner.trim()),Wr.routesPosted===true];
+  out.planning=plan.filter(Boolean).length/plan.length;
+  // Equipment
+  let req=0,cov=0,place=0,placeN=0,trReq=0,trHave=0,impT=0,impN=0;
+  for(const x of F.bs)for(const y of x.c.fl){req+=y.c.sleds;cov+=y.c.covered;
+    const f=y.f;const p=[!!f.storage.trim(),f.storageNearStair===true,f.storageSigned===true,f.routeSigned===true];place+=p.filter(Boolean).length;placeN+=p.length;
+    const sh=y.c.noNight?1:2;trReq+=y.c.rescuers*sh;trHave+=Math.min(y.c.rescuers,num(f.trainedDay))+(y.c.noNight?0:Math.min(y.c.rescuers,num(f.trainedNight)));
+    for(const [k] of IMPEDIMENTS){const v=f.imp[k];if(v){impN++;impT+=v==='ok'?1:v==='concern'?.5:0}}}
+  out.equipment=req?cov/req:0;out.placement=placeN?place/placeN:0;out.training=trReq?trHave/trReq:0;out.route=impN?impT/impN:null;
+  const w={equipment:25,training:25,planning:20,placement:15,route:15};let s=0,ws=0;
+  for(const k in w){if(out[k]!=null){s+=out[k]*w[k];ws+=w[k]}}
+  out.overall=ws?s/ws:0;return out
+}
+function band(p){const v=p*100;if(v>=90)return['Evacuation Ready','var(--ok)'];if(v>=70)return['Approaching Readiness','var(--ok)'];if(v>=40)return['Developing','var(--warn)'];return['Not Ready','var(--bad)']}
+
+/* ============ State & storage ============ */
+const LS='ethos-evac-assessments-v1';
+const S={map:{},curId:null,view:'home',bIdx:0,open:{},dirty:{},db:null,remote:false,confirmDel:null};
+function norm(A){if(!A||!Array.isArray(A.buildings))return A;if(A.facility&&A.facility.type==='School')A.facility.type='School (K-12)';if(A.assumptions&&Array.isArray(A.assumptions.classes)){const ob=A.assumptions.obesityRate!=null?A.assumptions.obesityRate:(A.assumptions.bariShare!=null?A.assumptions.bariShare:.2);for(const c of A.assumptions.classes){if(c.census==null)c.census=1;if(c.bari==null)c.bari=ob;if(c.crit==null)c.crit=num(c.pct)>=1}
+  A.assumptions.classes=A.assumptions.classes.filter(c=>grp(c)==='health');delete A.assumptions.seeded;if(!A.assumptions.people)A.assumptions.people={...DEF_PEOPLE}}if(A.assumptions&&A.assumptions.obesityRate==null){A.assumptions.obesityRate=A.assumptions.bariShare!=null?A.assumptions.bariShare:.2;delete A.assumptions.bariShare}A.buildings.forEach((b,i)=>{if(b.slot==null)b.slot=i});A.buildings.sort((a,b)=>a.slot-b.slot);return A}
+/* Storage: everything lives in this browser's IndexedDB (assessments + photo blobs). */
+const DBN='ethos-evac-assessment',DBV=1;let idb=null;
+function openDB(){return new Promise((res,rej)=>{let r;try{r=indexedDB.open(DBN,DBV)}catch(e){rej(e);return}
+  r.onupgradeneeded=()=>{const d=r.result;if(!d.objectStoreNames.contains('assessments'))d.createObjectStore('assessments',{keyPath:'id'});if(!d.objectStoreNames.contains('photos'))d.createObjectStore('photos')};
+  r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);r.onblocked=()=>rej(new Error('blocked'))})}
+function tx(store,mode,fn){return new Promise((res,rej)=>{if(!idb){rej(new Error('nodb'));return}const t=idb.transaction(store,mode);const st=t.objectStore(store);let out;const r=fn(st);if(r)r.onsuccess=()=>{out=r.result};t.oncomplete=()=>res(out);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)})}
+const dbAll=()=>tx('assessments','readonly',st=>st.getAll());
+const dbPut=A=>tx('assessments','readwrite',st=>st.put(JSON.parse(JSON.stringify(A))));
+const dbDel=id=>tx('assessments','readwrite',st=>st.delete(id));
+const photoPut=(id,blob)=>tx('photos','readwrite',st=>st.put(blob,id));
+const photoGet=id=>tx('photos','readonly',st=>st.get(id));
+const photoDel=id=>tx('photos','readwrite',st=>st.delete(id));
+function lsSave(){}
+const cur=()=>S.map[S.curId];
+function setStatus(t,cls){const el=document.getElementById('status');el.textContent=t;el.className='status '+(cls||'')}
+let saveT={};
+function touch(){const A=cur();if(!A)return;A.updatedAt=new Date().toISOString();scheduleWrite(A.id)}
+function scheduleWrite(id){S.dirty[id]=true;setStatus('Saving…');clearTimeout(saveT[id]);saveT[id]=setTimeout(()=>saveNow(id),400)}
+async function saveNow(id){const A=S.map[id];if(!A)return;try{await dbPut(A);delete S.dirty[id];if(!Object.keys(S.dirty).length)setStatus('Saved on this device','ok')}
+  catch(e){setStatus(idb?'Not saved — device storage is full or blocked':'Not saved — storage unavailable (private browsing?)','warn')}}
+window.addEventListener('pagehide',()=>{for(const id in S.dirty){clearTimeout(saveT[id]);saveNow(id)}});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')for(const id in S.dirty){clearTimeout(saveT[id]);saveNow(id)}});
+
+/* ============ Helpers ============ */
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function getPath(o,p){return p.split('.').reduce((a,k)=>a==null?a:a[k],o)}
+function setPath(o,p,v){const ks=p.split('.');let a=o;for(let i=0;i<ks.length-1;i++)a=a[ks[i]];a[ks[ks.length-1]]=v}
+const fmt=(n,d=0)=>n==null||!isFinite(n)?'—':Number(n).toLocaleString(undefined,{maximumFractionDigits:d,minimumFractionDigits:0});
+const pct=p=>p==null?'—':Math.round(p*100)+'%';
+function txt(path,label,ph=''){const v=getPath(cur(),path)??'';return`<div class="f"><label for="i-${path}">${label}</label><input type="text" id="i-${path}" data-b="${path}" value="${esc(v)}" placeholder="${esc(ph)}"></div>`}
+function area(path,label,ph=''){const v=getPath(cur(),path)??'';return`<div class="f"><label for="i-${path}">${label}</label><textarea id="i-${path}" data-b="${path}" placeholder="${esc(ph)}">${esc(v)}</textarea></div>`}
+function numIn(path,label,step=1){const v=getPath(cur(),path);return`<div class="f"><label for="i-${path}">${label}</label><input type="number" inputmode="decimal" step="${step}" id="i-${path}" data-b="${path}" data-t="num" value="${v===''||v==null?'':esc(v)}"></div>`}
+function stepper(path,label){const v=getPath(cur(),path);return`<div class="f"><label for="i-${path}">${label}</label><div class="stepper"><button type="button" data-act="dec" data-p="${path}" aria-label="Decrease">−</button><input type="number" inputmode="numeric" min="0" id="i-${path}" data-b="${path}" data-t="num" value="${esc(v??0)}"><button type="button" data-act="inc" data-p="${path}" aria-label="Increase">+</button></div></div>`}
+function yn(path,opts=[['Yes',true],['No',false]]){const v=getPath(cur(),path);return`<div class="seg" role="group">${opts.map(([l,val,c])=>`<button type="button" class="${c||''}" data-set="${path}" data-v='${JSON.stringify(val)}' aria-pressed="${v===val}">${l}</button>`).join('')}</div>`}
+function sel(path,label,options){const v=getPath(cur(),path);return`<div class="f"><label for="i-${path}">${label}</label><select id="i-${path}" data-b="${path}">${options.map(o=>`<option ${o===v?'selected':''}>${esc(o)}</option>`).join('')}</select></div>`}
+function checks(path,list){const arr=getPath(cur(),path)||[];return`<div class="checks">${list.map(([k,l])=>`<label class="chk"><input type="checkbox" data-arr="${path}" value="${k}" ${arr.includes(k)?'checked':''}><span>${esc(l)}</span></label>`).join('')}</div>`}
+function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2600)}
+
+/* ============ Views ============ */
+const STEPS=[['facility','Site','Facility & buildings'],['assume','Basis','Assumptions'],['who','Who','Roles & activation'],['when','When','Triggers & EMS'],['where','Where','Assembly & routes'],['floors','What','Floor-by-floor walk'],['training','How','Training & turnover'],['report','Report','Readiness report']];
+function renderHeader(){const A=cur();document.getElementById('hdrTitle').textContent=A?(A.facility.name||'Untitled assessment')+(A.example?' · example':''):'Ethos Preparedness · Single-Flow Evacuation Assessment';document.getElementById('homeBtn').hidden=!A||S.view==='home'}
+function render(){
+  renderHeader();const app=document.getElementById('app');
+  if(S.view==='home'||!cur()){S.view='home';app.innerHTML=`<div class="shell" style="grid-template-columns:minmax(0,1fr)"><main>${viewHome()}</main></div>`;hydratePhotos();return}
+  const v=S.view;const rail=STEPS.map(([k,q,l],i)=>`<button data-act="go" data-v="${k}" aria-current="${v===k}"><span class="q">${q}</span><span>${l}</span></button>`).join('');
+  const body={facility:viewFacility,who:viewWho,when:viewWhen,where:viewWhere,floors:viewFloors,training:viewTraining,assume:viewAssume,report:viewReport}[v]();
+  const idx=STEPS.findIndex(s=>s[0]===v);const next=STEPS[idx+1];const prev=STEPS[idx-1];
+  const nav=`<div class="row" style="justify-content:space-between">${prev?`<button class="btn" data-act="go" data-v="${prev[0]}">← ${prev[2]}</button>`:'<span></span>'}${next?`<button class="btn primary" data-act="go" data-v="${next[0]}">${next[2]} →</button>`:''}</div>`;
+  const y=window.scrollY;app.innerHTML=`<div class="shell"><nav class="rail" aria-label="Assessment steps">${rail}</nav><main>${body}${nav}</main></div>`;
+  if(S.keepScroll){window.scrollTo(0,y);S.keepScroll=false}
+  hydratePhotos();
+}
+function viewHome(){
+  const list=Object.values(S.map).sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));
+  const cards=list.map(A=>{const F=facilityCalc(A),sc=scores(A,F),[bn,col]=band(sc.overall);
+    const del=S.confirmDel===A.id?`<div class="confirm" data-stop="1">Delete this assessment for good? <button class="btn small danger" data-act="delYes" data-v="${A.id}">Delete</button><button class="btn small" data-act="delNo">Keep</button></div>`
+      :`<div><button class="btn small" data-act="delAsk" data-v="${A.id}" data-stop="1">Delete</button></div>`;
+    return`<div class="acard" data-act="open" data-v="${A.id}" role="button" tabindex="0">
+      <div class="row" style="justify-content:space-between"><h3>${esc(A.facility.name||'Untitled assessment')}</h3>${A.example?'<span class="tag">Example data</span>':''}</div>
+      <div class="meta">${esc(A.facility.address||'No address')} · ${esc(A.facility.date||'')}</div>
+      <div class="fsum"><span class="chip" style="color:${col}">${Math.round(sc.overall*100)} · ${bn}</span><span class="chip">${F.floors} floors</span><span class="chip ${F.gap?'bad':'ok'}">${F.gap?F.gap+' sled gap':'Sleds covered'}</span></div>
+      ${del}</div>`}).join('');
+  return`<div class="pagehead"><div class="eyebrow">Ethos Evacuation Training</div><h1>Facility assessments</h1><p>Walk a healthcare facility floor by floor, record what you find, and generate a Single-Flow Evacuation readiness report that answers why, who, what, when, where and how.</p></div>
+  <div class="row"><button class="btn primary" data-act="new">New assessment</button><button class="btn" data-act="import">Import from file</button><button class="btn" data-act="backupAll">Back up all</button></div>
+  <p class="homenote">Assessments and photos are saved only on this device. Use <b>Back up all</b> regularly to keep a copy in Files or iCloud Drive, or to move assessments to another device with <b>Import from file</b>.</p>
+  ${list.length?`<div class="cards">${cards}</div>`:`<div class="empty"><b style="font-size:17px;color:var(--fg)">No assessments yet</b><span>Saved assessments appear here. Start one before you walk the building; it saves on this device as you type, with or without a signal.</span><button class="btn primary" data-act="new">Start the first assessment</button></div>`}`
+}
+function head(eb,t,p){return`<div class="pagehead"><div class="eyebrow">${eb}</div><h1>${t}</h1>${p?`<p>${p}</p>`:''}</div>`}
+function viewFacility(){const A=cur();
+  return head('Site','Facility & buildings','Basic facility details and the buildings you will walk. Each building’s floors appear in the floor-by-floor walk.')+
+  `<section class="panel"><h2>Facility</h2><div class="grid">${txt('facility.name','Facility name','e.g. Riverside Medical Center')}${txt('facility.address','Address / campus')}${sel('facility.type','Facility type',['Acute care hospital','Children’s hospital','Behavioral health','Skilled nursing / long-term care','Ambulatory / outpatient','Medical office building','Company','School (K-12)','College / University','Other'])}${txt('facility.assessor','Assessor')}<div class="f"><label for="i-facility.date">Assessment date</label><input type="date" id="i-facility.date" data-b="facility.date" value="${esc(A.facility.date)}"></div>${txt('facility.contact','Facility contact','EP coordinator')}${txt('facility.contactTitle','Contact title')}</div>${area('facility.notes','Notes')}</section>
+  ${siteBuildings()}`}
+const FLOOR_OPTS=Array.from({length:100},(_,i)=>i+1);
+function aboveCount(b){return b?b.floors.filter(f=>num(f.level)>=1).length:0}
+function siteBuildings(){const A=cur();let rows='';
+  for(let i=0;i<5;i++){const b=A.buildings.find(x=>x.slot===i);const n=aboveCount(b);
+    rows+=`<div class="brow"><div class="f"><label for="bn-${i}">Building name ${i+1}</label><input type="text" id="bn-${i}" data-bslot="${i}" value="${esc(b?b.name:'')}" placeholder="${i===0?'e.g. Patient Tower':''}"></div><div class="f"><label for="bf-${i}">Number of floors</label><select id="bf-${i}" data-bfloors="${i}"><option value="">—</option>${FLOOR_OPTS.map(k=>`<option value="${k}" ${k===n?'selected':''}>${k}</option>`).join('')}</select></div></div>`;
+    if(S.pendingFloors&&S.pendingFloors.slot===i)rows+=`<div class="confirm" style="padding:4px 0 8px">Floors above ${S.pendingFloors.n||0} already have walk data. Remove them? <button class="btn small danger" data-act="floorsYes">Remove floors</button><button class="btn small" data-act="floorsNo">Keep</button></div>`}
+  return`<section class="panel"><h2>Buildings</h2><p class="hint">Name each building and choose its number of floors above the exit level. Floors you add here appear in the floor-by-floor walk; basements can be added there.</p><div class="blist">${rows}</div></section>`}
+function slotBuilding(A,i){let b=A.buildings.find(x=>x.slot===i);if(!b){b={id:uid(),name:'',slot:i,floors:[]};A.buildings.push(b);A.buildings.sort((a,c)=>a.slot-c.slot)}return b}
+function pruneBuilding(A,b){if(!b.name.trim()&&!b.floors.length){A.buildings.splice(A.buildings.indexOf(b),1)}}
+function floorHasData(f){return f.units.length>0||!!(f.notes||'').trim()||!!(f.storage||'').trim()||num(f.onHandStd)+num(f.onHandBari)+num(f.onHandPeds)+num(f.trainedDay)+num(f.trainedNight)+num(f.staffDay)+num(f.staffNight)>0||Object.keys(f.imp||{}).length>0}
+function applyFloors(A,b,n){b.floors=b.floors.filter(f=>num(f.level)<1||num(f.level)<=n);for(let L=1;L<=n;L++){if(!b.floors.some(f=>Math.round(num(f.level))===L))b.floors.push(newFloor(L))}pruneBuilding(A,b);touch()}
+function viewWho(){
+  return head('Who','Roles & activation','Who orders the evacuation, who clears each floor, and who operates the evacuation equipment.')+
+  `<section class="panel"><h2>Activation</h2>
+   <div class="rowq"><span>Is there a written evacuation plan that addresses non-ambulatory occupants?</span>${yn('who.plan',[['Yes',true],['Draft','draft'],['No',false]])}</div>
+   <div class="rowq"><span>Is the evacuation order automated (alarm-triggered)?</span>${yn('who.automated',[['Fully',true],['Partly','partial'],['No',false]])}</div>
+   <div class="rowq"><span>Does the facility use an incident command structure (HICS)?</span>${yn('who.ics')}</div>
+   <div class="grid wide">${txt('who.activation','Who activates an evacuation?','e.g. Administrator on duty / House supervisor as IC')}${txt('who.sweep','Who sweeps and clears each floor?','e.g. Charge nurse with floor warden')}${txt('who.operators','Who performs Med Sled evacuations?','e.g. Unit ERT members, facilities, security')}${numIn('who.drills','Evacuation drills per year')}</div></section>
+  <section class="panel"><h2>Roles during an evacuation</h2><div class="grid wide">${area('who.wardenRole','Floor warden','What does the floor warden do?')}${area('who.ertRole','Emergency response team (ERT)','')}${area('who.securityRole','Security','')}</div></section>`}
+function viewWhen(){
+  return head('When','Triggers & EMS expectations','When staff extract people themselves, and when they wait for fire and EMS.')+
+  `<section class="panel"><h2>Self-evacuation triggers</h2><p class="hint">Which conditions does the plan treat as a trigger for staff to begin extraction without waiting for EMS?</p>${checks('when.criteria',SELF_EVAC)}
+   ${area('when.waitCriteria','When does the plan call for waiting for EMS / fire?','e.g. Stable building, no fire, defend in place pending structural assessment')}
+   <div class="rowq"><span>Does the plan use horizontal evacuation (to an adjacent smoke compartment) first?</span>${yn('when.horizontal')}</div></section>
+  <section class="panel"><h2>EMS & outside help</h2><div class="grid">${numIn('ems.normalMin','Typical EMS response (minutes)')}${txt('ems.disasterWait','Expected wait in a regional disaster','e.g. Several hours or more')}${txt('ems.partner','Partner facility for emergency transfers')}</div>
+   <div class="rowq"><span>Mutual-aid agreement in place for patient transfer?</span>${yn('ems.mutualAid')}</div>${area('when.notes','Notes')}</section>`}
+function viewWhere(){
+  return head('Where','Assembly areas & routes','Where evacuees go, and whether routes are posted. Equipment storage is recorded floor by floor in the walk.')+
+  `<section class="panel"><h2>Assembly areas</h2><div class="grid wide">${txt('where.ambAssembly','Ambulatory assembly area')}${txt('where.critAssembly','Critical-care / non-ambulatory assembly area')}${txt('where.transfer','Transfer point for ambulance pickup')}</div>
+  <span class="lbl">Critical-care assembly area is equipped with</span>${checks('where.supplies',SUPPLIES)}</section>
+  <section class="panel"><h2>Routes</h2>
+   <div class="rowq"><span>Evacuation routes are posted on every floor?</span>${yn('where.routesPosted')}</div>
+   <div class="rowq"><span>Floor plans with protocol stairwells and equipment locations are on file?</span>${yn('where.maps')}</div></section>`}
+function thumbs(f,k,fp){const ph=(f.photos&&f.photos[k])||[];const busy=S.uploading===f.id+':'+k;if(!ph.length&&!busy)return'';
+  return`<div class="thumbs">${ph.map(x=>`<div class="thumb"><img src="${purl(x.id)}" data-pid="${esc(x.id)}" alt="Photo: ${esc((IMPEDIMENTS.find(i=>i[0]===k)||[,''])[1])}">${S.confirmDel==='ph:'+x.id?`<div class="confirm thumbconfirm"><button class="btn small danger" data-act="delPhotoYes" data-p="${fp}" data-k="${k}" data-v="${esc(x.id)}">Delete photo</button><button class="btn small" data-act="delNo">Keep</button></div>`:`<button class="thumbx" data-act="delPhotoAsk" data-v="${esc(x.id)}" aria-label="Delete photo">×</button>`}</div>`).join('')}${busy?'<div class="thumb busy">Uploading…</div>':''}</div>`}
+function photoIds(o){const ids=[];const walk=f=>{for(const k in (f.photos||{}))for(const x of f.photos[k])ids.push(x.id)};if(o.floors)o.floors.forEach(walk);else if(o.buildings)o.buildings.forEach(b=>b.floors.forEach(walk));else walk(o);return ids}
+async function dropAssets(ids){for(const id of ids){try{await photoDel(id)}catch(e){}if(PURL[id]){URL.revokeObjectURL(PURL[id]);delete PURL[id]}}}
+const PURL={},BLANK='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+const purl=id=>PURL[id]||BLANK;
+async function hydratePhotos(){const imgs=[...document.querySelectorAll('img[data-pid]')];const need=[...new Set(imgs.filter(i=>!PURL[i.dataset.pid]).map(i=>i.dataset.pid))];
+  for(const id of need){try{const b=await photoGet(id);if(b)PURL[id]=URL.createObjectURL(b)}catch(e){}}
+  for(const i of imgs){const u=PURL[i.dataset.pid];if(u){if(i.src!==u)i.src=u}else{i.closest('.thumb')?.classList.add('broken');i.setAttribute('data-missing','1')}}}
+async function shrink(file){try{const bmp=await createImageBitmap(file);const m=1600,sc=Math.min(1,m/Math.max(bmp.width,bmp.height));const c=document.createElement('canvas');c.width=Math.round(bmp.width*sc);c.height=Math.round(bmp.height*sc);c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
+  return await new Promise(r=>c.toBlob(b=>r(b),'image/jpeg',.82))}catch(e){return /^image\/(jpeg|png|webp|gif)$/.test(file.type)?file:null}}
+function floorSummary(A,f){const c=floorCalc(A,f);
+  return`<span class="chip">${fmt(c.nonAmb,1)} non-amb</span><span class="chip">${c.sleds} sleds req.</span><span class="chip ${c.gap?'bad':'ok'}">${c.gap?c.gap+' gap':'equipped'}</span><span class="chip ${c.dayShort||c.nightShort?'warn':'ok'}">${c.rescuers} rescuers/shift${c.dayShort||c.nightShort?` · short ${c.dayShort}d/${c.nightShort}n`:''}</span>`}
+function viewFloors(){const A=cur();if(!A.buildings.length)return head('What','Floor-by-floor walk','Record each floor as you walk it.')+`<div class="empty"><b style="font-size:17px;color:var(--fg)">No buildings yet</b><span>Name the buildings and choose their number of floors on the Site tab. Their floors will appear here.</span><button class="btn primary" data-act="go" data-v="facility">Go to Site</button></div>`;if(S.bIdx>=A.buildings.length)S.bIdx=0;const bi=S.bIdx,b=A.buildings[bi];
+  const tabs=A.buildings.map((x,i)=>`<button class="btn small ${i===bi?'on':''}" data-act="bld" data-v="${i}">${esc(x.name||'Building '+(x.slot+1))}</button>`).join('');
+  const floors=[...b.floors.map((f,fi)=>({f,fi}))].sort((x,y)=>num(y.f.level)-num(x.f.level));
+  const p=`buildings.${bi}`;
+  const G=groupOf(A),T=GROUP_TXT[G];const opts=A.assumptions.classes.filter(c=>grp(c)===G).map(c=>`<option value="${c.k}">${esc(c.name)} — ${c.perExit?c.perExit+'/exit':Math.round(c.pct*100)+'%'}</option>`).join('');
+  const fl=floors.map(({f,fi})=>{const fp=`${p}.floors.${fi}`;const open=S.open[f.id];
+    const units=f.units.map((u,ui)=>`<div class="unit"><select data-b="${fp}.units.${ui}.k" aria-label="${T.cls}">${A.assumptions.classes.filter(c=>grp(c)===G||c.k===u.k).map(c=>`<option value="${c.k}" ${c.k===u.k?'selected':''}>${esc(c.name)} — ${c.perExit?c.perExit+'/exit':Math.round(c.pct*100)+'%'}</option>`).join('')}</select><input type="number" inputmode="numeric" min="0" data-b="${fp}.units.${ui}.beds" data-t="num" value="${esc(u.beds)}" aria-label="${T.unit}" placeholder="${T.unit}"><button class="iconbtn" data-act="delUnit" data-p="${fp}" data-v="${ui}" aria-label="Remove unit">×</button></div>`).join('');
+    const c=floorCalc(A,f);
+    return`<details class="floor" ${open?'open':''} data-fid="${f.id}"><summary><div class="lvl"><small>LEVEL</small>${esc(f.level)}</div><div style="min-width:0"><b>${esc(f.label||'Floor '+f.level)}</b><div class="fsum" data-live="fs" data-p="${fp}">${floorSummary(A,f)}</div></div><span class="note">${open?'Close':'Open'}</span></summary>
+    <div class="fbody">
+      <div class="fsec"><h3>Floor</h3><div class="grid">${numIn(fp+'.level','Level (1 = exit level)')}${txt(fp+'.label',G==='health'?'Floor / unit name':'Floor name',G==='health'?'e.g. 4 West Med-Surg':G==='school'?'e.g. 2nd floor – Science wing':'e.g. 3rd floor – Finance')}${stepper(fp+'.stairwells','Protocol stairwells / exits')}${stepper(fp+'.bariatricPts',G==='health'?'Bariatric patients (typical)':'Bariatric occupants (typical)')}</div></div>
+      ${G==='health'?`<div class="fsec"><h3>${T.walkH}</h3><p class="hint">${T.walkHint}</p>
+        ${units||`<p class="hint">No ${G==='health'?'patient care units':'occupied spaces'} entered for this floor. Floors without them are covered at 1 sled per stairwell.</p>`}
+        <div class="row"><select id="add-${f.id}" aria-label="Add ${T.cls.toLowerCase()}"><option value="">${G==='health'?'Add a care unit…':'Add a space…'}</option>${opts}</select></div></div>`:`<div class="fsec"><h3>${T.walkH}</h3><p class="hint">${T.walkHint}</p><div class="grid"><div class="f"><label for="i-${fp}.spaceType">Space type</label><select id="i-${fp}.spaceType" data-b="${fp}.spaceType"><option value="">Choose a space type…</option>${spacesFor(A,G).map(o=>`<option ${o===f.spaceType?'selected':''}>${esc(o)}</option>`).join('')}</select></div>${stepper(fp+'.occupants',G==='school'?'Students and staff':'Occupants')}</div></div>`}
+      <div class="fsec"><h3>Staff & training</h3><div class="grid">${stepper(fp+'.staffDay','Staff on floor — day')}${stepper(fp+'.staffNight','Staff on floor — night')}${stepper(fp+'.trainedDay','Trained in Med Sled — day')}${stepper(fp+'.trainedNight','Trained in Med Sled — night')}</div>
+        <div class="rowq"><span>Floor warden assigned — day</span>${yn(fp+'.wardenDay')}</div><div class="rowq"><span>Floor warden assigned — night</span>${yn(fp+'.wardenNight')}</div></div>
+      <div class="fsec"><h3>Equipment on hand & storage</h3><div class="grid">${stepper(fp+'.onHandStd','Standard sleds (MS36) on floor')}${stepper(fp+'.onHandBari','Bariatric sleds (MS48) on floor')}${stepper(fp+'.onHandPeds','Infant / pediatric devices')}${txt(fp+'.storage','Storage location','e.g. Clean utility by Stair B')}</div>
+        <div class="rowq"><span>Stored within sight of a protocol stairwell</span>${yn(fp+'.storageNearStair')}</div><div class="rowq"><span>Storage location signed</span>${yn(fp+'.storageSigned')}</div><div class="rowq"><span>Evacuation route posted on this floor</span>${yn(fp+'.routeSigned')}</div></div>
+      <div class="fsec"><h3>Route conditions & impediments</h3><div>${IMPEDIMENTS.map(([k,l])=>`<div class="imp"><span>${l}</span><div class="row">${yn(fp+'.imp.'+k,[['OK','ok','okv'],['Concern','concern','warnv'],['Critical','critical','badv']])}<label class="iconbtn cam" title="Add a photo"><input type="file" accept="image/*" data-photo="${fp}" data-k="${k}" class="sr"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span class="sr">Add a photo of: ${esc(l)}</span></label></div>${thumbs(f,k,fp)}</div>`).join('')}</div></div>
+      ${area(fp+'.notes','Floor notes')}
+      <div class="calcbox" data-live="fc" data-p="${fp}">${calcBox(c)}</div>
+      <div class="row" style="justify-content:space-between"><button class="btn small" data-act="dupFloor" data-p="${p}" data-v="${fi}">Copy to floor above</button>${S.confirmDel===f.id?`<div class="confirm">Remove this floor? <button class="btn small danger" data-act="delFloorYes" data-p="${p}" data-v="${fi}">Remove</button><button class="btn small" data-act="delNo">Keep</button></div>`:`<button class="btn small danger" data-act="delFloorAsk" data-v="${f.id}">Remove floor</button>`}</div>
+    </div></details>`}).join('');
+  const bc=buildingCalc(A,b);
+  return head('What','Floor-by-floor walk','Record each floor as you walk it: who is there, what equipment and trained staff are on hand, and what could slow an extraction.')+
+  `<div class="btabs">${tabs}</div>
+  <section class="panel"><div class="grid">${txt(p+'.name','Building name')}</div>
+   <div class="calcbox" data-live="bc" data-p="${p}">${bcBox(bc)}</div>
+   <div class="row"><button class="btn primary" data-act="addFloor" data-p="${p}">+ Add floor above</button><button class="btn" data-act="addBasement" data-p="${p}">+ Add floor below</button></div></section>
+  ${fl}`}
+function calcBox(c){return`<div><b>${fmt(c.nonAmb,1)}</b><span>Non-ambulatory at census</span></div><div><b>${c.sleds}</b><span>Sleds required (${c.std} MS36 · ${c.bari} MS48)</span></div><div><b style="color:${c.gap?'var(--bad)':'var(--ok)'}">${c.gap}</b><span>Sled gap${c.bariGap?` (${c.bariGap} bariatric)`:''}</span></div><div><b>${c.rescuers}</b><span>Trained rescuers needed per shift</span></div>${c.peds?`<div><b>${c.peds}</b><span>Infant / pediatric beds</span></div>`:''}`}
+function bcBox(bc){return`<div><b>${fmt(bc.nonAmb,1)}</b><span>Non-ambulatory, building</span></div><div><b>${bc.sleds}</b><span>Sleds required</span></div><div><b style="color:${bc.gap?'var(--bad)':'var(--ok)'}">${bc.gap}</b><span>Sled gap</span></div><div><b>${bc.perShift}</b><span>Rescuers per shift (${bc.floorRescuers} floor + ${bc.stairCrew} stair)</span></div><div><b>${bc.time==null?'—':fmt(bc.time)+' min'}</b><span>Est. evacuation time</span></div>`}
+function viewTraining(){const A=cur(),F=facilityCalc(A);
+  return head('How','Training & turnover','How many trained rescuers the facility needs, and how often training must run to keep pace with turnover.')+
+  `<section class="panel"><h2>Workforce</h2><div class="grid">${numIn('training.turnoverPct','Annual staff turnover (%)')}${numIn('training.crews','Shift crews to cover 24/7',.1)}${numIn('training.refresherMonths','Refresher interval (months)')}${numIn('training.classSize','Students per class')}${numIn('training.currentTrained','Staff currently trained (all shifts)')}<div class="f"><label for="i-training.lastTraining">Last Med Sled training</label><input type="date" id="i-training.lastTraining" data-b="training.lastTraining" value="${esc(A.training.lastTraining)}"></div></div>
+  <p class="hint">Shift crews: a 24/7 operation with 40-hour weeks needs about 4.2 crews to staff every shift (168 ÷ 40).</p>
+   <div class="rowq"><span>In-house instructor trained to teach Med Sled (train-the-trainer)?</span>${yn('training.trainer')}</div>
+   <div class="rowq"><span>Training completions tracked in an LMS?</span>${yn('training.lms')}</div>
+   <div class="calcbox" data-live="tr">${trBox(F,A)}</div></section>`}
+function trBox(F,A){return`<div><b>${F.perShift}</b><span>Trained rescuers needed per shift</span></div><div><b>${F.roster}</b><span>Roster across ${A.training.crews} crews</span></div><div><b>${F.target}</b><span>Training target incl. ${Math.round(num(A.assumptions.buffer)*100)}% buffer</span></div><div><b>${F.seats}</b><span>Training seats per year</span></div><div><b>${F.sessions}</b><span>Classes per year</span></div><div><b>Every ${F.cadence} mo</b><span>Recommended class cadence</span></div>`}
+function classUse(A,k){let n=0;for(const b of A.buildings)for(const f of b.floors)for(const u of f.units)if(u.k===k)n++;return n}
+function missingClasses(A){const G=groupOf(A);return CLASSES.filter(c=>grp(c)===G&&!A.assumptions.classes.some(x=>x.k===c.k))}
+function peoplePanel(A,G,T){const P=peopleRates(A);const f=(k,l,id)=>`<div class="f"><label for="${id}">${l}</label><input type="number" inputmode="decimal" step="1" min="0" max="100" id="${id}" data-b="assumptions.people.${k}" data-t="pct" value="${Math.round(num(P[k])*100)}"></div>`;
+  return`<section class="panel"><h2>${T.h2}</h2><p class="hint">${esc(NONAMB_DEF)}</p>
+   <div class="grid">${f('census',T.cen,'i-pc')}${f('pct','% Non-ambulatory','i-pp')}${f('bari','% Bariatric (of non-ambulatory)','i-pb')}</div>
+   <p class="hint">These rates apply to every occupant, whatever the floor’s space type. <b>${T.cen}</b> is the share of the normal headcount present on a typical day. <b>% Non-ambulatory</b> covers people with a mobility disability or a temporary injury on an ordinary day, plus people injured in the event itself. It is an Ethos planning placeholder, not a published standard: about 1 in 7 U.S. adults has serious difficulty walking or climbing stairs (CDC), but many of them can still manage stairs slowly with help. <b>% Bariatric</b> defaults to 10%, close to the CDC’s 9.4% adult severe-obesity rate (2021–2023). Confirm each rate with the facility.</p></section>`}
+function viewAssume(){const A=cur(),as=A.assumptions,G=groupOf(A),T=GROUP_TXT[G];
+  return head('Assumptions','Calculation assumptions',G==='health'?'Defaults come from the Ethos detailed hospital evacuation readiness workbook. Adjust them per facility after the non-ambulatory consensus discussion with the EP coordinator.':`Rates for ${G==='school'?(A.facility.type==='College / University'?'colleges and universities':'K-12 schools'):'workplaces'}. These replace the hospital care-class table when the facility type on the Site tab is ${esc(A.facility.type)}. Adjust the rates per facility after discussing them with the ${G==='school'?(A.facility.type==='College / University'?'campus emergency manager':'district safety lead'):'facilities or EHS lead'}.`)+
+  (G==='health'?`<section class="panel"><h2>${T.h2}</h2><p class="hint">${esc(NONAMB_DEF)}</p>${G==='health'?`<p class="hint"><b>Census %</b> is the average daily occupancy for the class; it turns the licensed beds entered in the walk into occupied beds. <b>Critical care</b> assigns an MS48 to every sled for that class.</p>`:`<p class="hint"><b>${T.cen}</b> is the share of the space’s normal headcount present on a typical day. <b>% Non-amb</b> covers people with a mobility disability or a temporary injury on an ordinary day, plus people who are injured in the event itself. These rates are Ethos planning placeholders, not a published standard: about 1 in 7 U.S. adults has serious difficulty walking or climbing stairs (CDC), but many of them can still manage stairs slowly with help, so the defaults are lower. <b>% Bariatric</b> defaults to 10%, close to the CDC’s 9.4% adult severe-obesity rate (2021–2023). Confirm each rate with the facility, and raise it for spaces with known mobility needs or high injury risk.</p>`}<div class="tablewrap"><table><thead><tr><th>${T.cls}</th><th class="n" style="white-space:nowrap">${T.cen}</th><th class="n" style="white-space:nowrap">% Non-amb</th><th class="n" style="white-space:nowrap">% Bariatric</th>${G==='health'?'<th style="white-space:nowrap">Critical care?</th>':''}<th class="n" style="white-space:nowrap">Sleds/exit</th><th><span class="sr">Remove</span></th></tr></thead><tbody>
+  ${as.classes.map((c,i)=>grp(c)!==G?'':`<tr><td>${esc(c.name)}</td><td class="n"><input type="number" step="5" min="0" max="100" style="max-width:88px" data-b="assumptions.classes.${i}.census" data-t="pct" value="${Math.round(num(c.census==null?1:c.census)*100)}" aria-label="${esc(c.name)} daily census percent"></td><td class="n"><input type="number" step="5" style="max-width:88px" data-b="assumptions.classes.${i}.pct" data-t="pct" value="${Math.round(c.pct*100)}" aria-label="${esc(c.name)} percent non-ambulatory"></td><td class="n"><input type="number" step="1" min="0" max="100" style="max-width:88px" data-b="assumptions.classes.${i}.bari" data-t="pct" value="${c.crit?100:Math.round(num(c.bari)*100)}" ${c.crit?'disabled title="Critical care uses MS48 for every sled"':''} aria-label="${esc(c.name)} percent bariatric"></td>${G==='health'?`<td><label class="chk" style="padding:6px 10px;display:inline-flex"><input type="checkbox" data-b="assumptions.classes.${i}.crit" data-t="bool" ${c.crit?'checked':''} aria-label="${esc(c.name)} is critical care"><span>MS48</span></label></td>`:''}<td class="n"><input type="number" style="max-width:80px" data-b="assumptions.classes.${i}.perExit" data-t="num" value="${c.perExit||0}" aria-label="${esc(c.name)} sleds per exit"></td><td style="text-align:right">${S.confirmDel==='cls:'+c.k?`<span class="confirm" style="justify-content:flex-end">${classUse(A,c.k)?`Also removes ${classUse(A,c.k)} unit${classUse(A,c.k)>1?'s':''} entered in the walk.`:'Remove?'} <button class="btn small danger" data-act="delClassYes" data-v="${c.k}">Remove</button><button class="btn small" data-act="delNo">Keep</button></span>`:`<button class="iconbtn" data-act="delClassAsk" data-v="${c.k}" aria-label="Remove ${esc(c.name)}">×</button>`}</td></tr>`).join('')}</tbody></table></div>
+  ${missingClasses(A).length?`<div class="row"><span class="hint">${missingClasses(A).length} ${G==='health'?'care class':'space type'}${missingClasses(A).length>1?(G==='health'?'es':'s'):''} removed for this facility.</span><button class="btn small" data-act="restoreClasses">Restore removed classes</button></div>`:''}</section>
+  <section class="panel"><h2>Bariatric patients</h2><p class="hint">Each care class has its own % bariatric: the share of its non-ambulatory patients assumed to need a bariatric (MS48) sled. Classes marked <b>Critical care</b> get an MS48 for every sled, because those patients often move with lines, monitors or a ventilator that need a wider sled. A floor’s observed bariatric patient count is used when it is higher.</p>
+   <div class="row" style="align-items:flex-end"><div class="f" style="max-width:260px"><label for="i-obr">Facility obesity rate (%)</label><input type="number" inputmode="decimal" step="1" id="i-obr" data-b="assumptions.obesityRate" data-t="pct" value="${Math.round(num(as.obesityRate)*100)}"></div><button class="btn" data-act="applyBari">Apply to all non-critical classes</button></div></section>
+`:peoplePanel(A,G,T))+`
+  <section class="panel"><h2>Equipment & time model</h2><div class="grid">
+   <div class="f"><label for="i-cov">Coverage target (% of non-amb)</label><input type="number" id="i-cov" data-b="assumptions.coverage" data-t="pct" value="${Math.round(as.coverage*100)}"></div>
+   ${numIn('assumptions.minSledsPerExit','Minimum sleds per stairwell')}${numIn('assumptions.prepMin','Prep & move to stairs (min)',.1)}${numIn('assumptions.landingMin','Descent per landing (min)',.1)}${numIn('assumptions.transportMin','Exit to extraction point & back (min)',.1)}${numIn('assumptions.positionMin','Position stair crews (min)')}${numIn('assumptions.peoplePerLanding','Bucket brigade people per landing')}
+   <div class="f"><label for="i-buf">Training buffer above roster (%)</label><input type="number" id="i-buf" data-b="assumptions.buffer" data-t="pct" value="${Math.round(as.buffer*100)}"></div></div>
+   <p class="hint">Rescuers per floor: 2-person prep teams, enough per stairwell to keep pace with descent. Stair crew: one person per landing per stairwell plus 2-person exit transport teams. Manpower excludes caregivers who stay with patients.</p></section>
+  <div><button class="btn small" data-act="resetAssume">Reset all assumptions to Ethos defaults</button></div>`}
+
+/* ============ Report ============ */
+function missing(t){return`<span class="missing">${t||'Not recorded'}</span>`}
+function val(v){return v&&String(v).trim()?esc(v):missing()}
+function ynTxt(v){return v===true?'Yes':v===false?'No':v==='draft'?'Draft only':v==='partial'?'Partly':missing()}
+function buildRecs(A,F,sc){const R=[];const add=(p,t)=>R.push([p,t]);
+  for(const x of F.bs)for(const y of x.c.fl){const f=y.f,c=y.c,nm=`${x.b.name}, ${f.label||'level '+f.level}`;
+    const parts=[];if(c.gap)parts.push(`add ${c.gap} sled${c.gap>1?'s':''}${c.bariGap?` (${c.bariGap} bariatric MS48)`:''}`);
+    const sh=Math.max(c.dayShort,c.nightShort);if(sh)parts.push(`train ${sh} more rescuer${sh>1?'s':''} per shift (short ${c.dayShort} day${c.noNight?'':`, ${c.nightShort} night`})`);
+    if(parts.length)add(1,`${nm}: ${parts.join('; ')}.`);
+    const crit=IMPEDIMENTS.filter(([k])=>f.imp[k]==='critical').map(i=>i[1].toLowerCase());if(crit.length)add(1,`Correct critical route issues on ${nm}: ${crit.join('; ')}.`);
+    if(f.storage&&f.storageNearStair===false)add(2,`Relocate equipment on ${nm} to within sight of a protocol stairwell.`);
+    if(!f.storage.trim()&&c.sleds)add(2,`Designate an equipment storage location on ${nm}.`);
+    if(f.storageSigned===false)add(2,`Sign the equipment storage location on ${nm}.`);
+    if(f.wardenDay===false||(f.wardenNight===false&&!c.noNight))add(2,`Assign a floor warden for every shift on ${nm}.`);
+    const con=IMPEDIMENTS.filter(([k])=>f.imp[k]==='concern').length;if(con)add(3,`Review ${con} route concern${con>1?'s':''} on ${nm}.`)}
+  if(A.who.plan!==true)add(1,'Write or complete an evacuation plan that addresses non-ambulatory and injured occupants.');
+  if(!A.who.operators.trim())add(1,'Name the team responsible for Med Sled extraction on each shift.');
+  if(!A.who.activation.trim())add(2,'Define who has authority to order a full or partial evacuation.');
+  if((A.when.criteria||[]).length<2)add(2,'Define the conditions under which staff begin extraction without waiting for EMS.');
+  if(!A.where.critAssembly.trim())add(2,'Designate a critical-care assembly area for non-ambulatory evacuees.');
+  else if((A.where.supplies||[]).length<4)add(3,'Stock the critical-care assembly area for continued care (water, warmth, medical supplies, power, communications).');
+  if(num(A.who.drills)<1)add(2,'Hold at least one evacuation drill per year that includes a sled descent.');
+  if(A.training.trainer!==true)add(3,'Certify in-house instructors through Ethos train-the-trainer so training keeps pace with turnover.');
+  if(A.training.lms!==true)add(3,'Track training completions in an LMS so trained staff can be counted per shift.');
+  return R.sort((a,b)=>a[0]-b[0])}
+function reportPhotos(A,F){const items=[];for(const x of F.bs)for(const y of x.c.fl){const f=y.f;for(const [k,l] of IMPEDIMENTS)for(const ph of ((f.photos||{})[k]||[]))items.push({id:ph.id,cap:`${x.b.name}, ${f.label||'level '+f.level}`,l,r:f.imp[k]})}
+  if(!items.length)return'';return`<h3 style="font-size:18px;margin-top:6px">Photo documentation</h3><div class="photos">${items.map(i=>`<figure><img src="${purl(i.id)}" data-pid="${esc(i.id)}" alt="${esc(i.l)}"><figcaption><b>${esc(i.l)}</b>${i.r?` · <span style="color:${i.r==='critical'?'var(--bad)':i.r==='concern'?'var(--warn)':'var(--ok)'}">${i.r==='ok'?'OK':i.r[0].toUpperCase()+i.r.slice(1)}</span>`:''}<br>${esc(i.cap)}</figcaption></figure>`).join('')}</div>`}
+function reportHTML(A){const F=facilityCalc(A),sc=scores(A,F),[bn,col]=band(sc.overall),fa=A.facility;
+  const bars=[['Equipment',sc.equipment],['Training',sc.training],['Planning',sc.planning],['Placement',sc.placement],['Route conditions',sc.route]].map(([l,v])=>{const c=v==null?'var(--line)':v>=.9?'var(--ok)':v>=.6?'var(--warn)':'var(--bad)';return`<div class="bar"><span>${l}</span><div class="track"><div class="fill" style="width:${v==null?0:Math.round(v*100)}%;background:${c}"></div></div><span class="num">${pct(v)}</span></div>`}).join('');
+  const floorsRows=F.bs.flatMap(x=>[...x.c.fl].sort((a,b)=>num(b.f.level)-num(a.f.level)).map(y=>`<tr><td>${esc(x.b.name)}</td><td>${esc(y.f.label||'Level '+y.f.level)}${y.f.spaceType&&groupOf(A)!=='health'?`<br><span class="note">${esc(y.f.spaceType)}</span>`:''}</td><td class="n">${esc(y.f.level)}</td><td class="n">${fmt(y.c.nonAmb,1)}</td><td class="n">${y.c.sleds}</td><td class="n">${y.c.std}/${y.c.bari}</td><td class="n">${num(y.f.onHandStd)+num(y.f.onHandBari)}</td><td class="n" style="color:${y.c.gap?'var(--bad)':'inherit'}">${y.c.gap}</td><td class="n">${y.c.rescuers}</td><td class="n">${num(y.f.trainedDay)}/${num(y.f.trainedNight)}</td></tr>`)).join('');
+  const whereRows=F.bs.flatMap(x=>x.c.fl.filter(y=>y.c.sleds).map(y=>`<tr><td>${esc(x.b.name)} · ${esc(y.f.label||'Level '+y.f.level)}</td><td>${y.f.storage?esc(y.f.storage):missing()}</td><td>${ynTxt(y.f.storageNearStair)}</td><td>${ynTxt(y.f.storageSigned)}</td><td>${ynTxt(y.f.routeSigned)}</td></tr>`)).join('');
+  const impCounts=IMPEDIMENTS.map(([k,l])=>{let cr=0,co=0;for(const x of F.bs)for(const y of x.c.fl){if(y.f.imp[k]==='critical')cr++;if(y.f.imp[k]==='concern')co++}return{l,cr,co}}).filter(r=>r.cr||r.co);
+  const bariTotal=F.bs.reduce((s,x)=>s+x.b.floors.reduce((t,f)=>t+num(f.bariatricPts),0),0);
+  const pedsTotal=F.bs.reduce((s,x)=>s+x.c.fl.reduce((t,y)=>t+y.c.peds,0),0);
+  const recs=buildRecs(A,F,sc);
+  const bldTime=F.bs.map(x=>`${esc(x.b.name)}: ${x.c.time==null?'—':fmt(x.c.time)+' minutes'} (${x.c.stairs} stairwell${x.c.stairs===1?'':'s'}, ${fmt(x.c.demand)} extractions from up to ${x.c.top>1?'level '+x.c.top:'the exit level'})`).join('<br>');
+  const crit=SELF_EVAC.filter(([k])=>(A.when.criteria||[]).includes(k)).map(x=>x[1]);
+  const sup=SUPPLIES.filter(([k])=>(A.where.supplies||[]).includes(k)).map(x=>x[1]);
+  return`<div class="rep-head"><div class="eyebrow">Ethos Preparedness · Single-Flow Evacuation Readiness Report</div><h1>${esc(fa.name||'Untitled facility')}</h1>
+   <div class="meta">${esc(fa.address)}${fa.address?' · ':''}${esc(fa.type)} · Assessed ${esc(fa.date)}${fa.assessor?' by '+esc(fa.assessor):''}${fa.contact?' · Facility contact: '+esc(fa.contact)+(fa.contactTitle?', '+esc(fa.contactTitle):''):''}</div>${A.example?'<div><span class="tag">Example data — not a real facility</span></div>':''}</div>
+  <div class="verdict"><div class="dial" style="border-color:${col};color:${col}">${Math.round(sc.overall*100)}</div><div><h2 style="color:${col}">${bn}</h2><p style="margin:4px 0 0;color:var(--muted)">Readiness score out of 100, weighted across equipment (25), training (25), planning (20), placement (15) and route conditions (15). Scoring bands are provisional until Ethos publishes its Evacuation Ready standard.</p></div></div>
+  <div class="tiles"><div class="tile"><b>${fmt(F.nonAmb,0)}</b><span>Non-ambulatory occupants at average census</span></div><div class="tile"><b>${F.onHand} / ${F.sleds}</b><span>Sleds on hand / required</span></div><div class="tile"><b>${F.perShift}</b><span>Trained rescuers needed every shift</span></div><div class="tile"><b>${F.maxTime==null?'—':fmt(F.maxTime)+' min'}</b><span>Est. evacuation time, fully equipped & staffed</span></div></div>
+  <div class="bars">${bars}</div>
+  <section class="rsec"><h2><span class="w">Why</span>Single-flow evacuation and the unmitigated risk</h2>
+   <p>${esc(A.assumptions.definition)}</p>
+   <p>${esc(NONAMB_DEF)}</p>
+   <p>At average census, about <b>${fmt(F.nonAmb,0)}</b> people across <b>${F.floors}</b> floors of this facility cannot evacuate on their own${F.bs.some(x=>x.c.top>1)?', most of them above the exit level':''}${bariTotal?`, including about ${bariTotal} bariatric patients`:''}${pedsTotal?` and ${pedsTotal} infant or pediatric beds`:''}. Elevators are not available in a fire or after an earthquake, so each of these people must be carried down the stairs.</p>
+   <p>In a regional disaster, fire and EMS resources are spread across the whole community at once and are triaged across many incidents.${A.ems.disasterWait?` The facility expects a wait of <b>${esc(A.ems.disasterWait)}</b> for outside help in that scenario${A.ems.normalMin?`, compared with about ${esc(A.ems.normalMin)} minutes on a normal day`:''}.`:''} A facility that depends on responders to carry its non-ambulatory occupants out is planning to leave those occupants behind. Today ${F.gap?`<b>${F.gap}</b> of the ${F.sleds} sleds needed are missing`:'the required sleds are in place'}, and trained rescuers cover ${pct(sc.training)} of the need across day and night shifts.</p></section>
+  <section class="rsec"><h2><span class="w">Who</span>Activation and responsibility</h2><dl class="qa">
+   <dt>Who activates an evacuation?</dt><dd>${val(A.who.activation)}</dd><dt>Is the order automated?</dt><dd>${ynTxt(A.who.automated)}</dd><dt>Incident command (HICS) in use?</dt><dd>${ynTxt(A.who.ics)}</dd>
+   <dt>Who sweeps each floor?</dt><dd>${val(A.who.sweep)}</dd><dt>Who performs Med Sled evacuations?</dt><dd>${val(A.who.operators)}</dd>
+   <dt>Written plan covers non-ambulatory occupants?</dt><dd>${ynTxt(A.who.plan)}</dd><dt>Evacuation drills per year</dt><dd>${A.who.drills!==''?esc(A.who.drills):missing()}</dd>
+   <dt>Floor wardens assigned</dt><dd>${(()=>{let d=0,n=0,t=0;for(const x of F.bs)for(const f of x.b.floors){t++;if(f.wardenDay===true)d++;if(f.wardenNight===true)n++}return`${d} of ${t} floors on day shift, ${n} of ${t} on night shift`})()}</dd></dl></section>
+  <section class="rsec"><h2><span class="w">What</span>Impediments and roles</h2>
+   ${impCounts.length?`<div class="tablewrap"><table><thead><tr><th>Impediment to extraction</th><th class="n">Floors critical</th><th class="n">Floors of concern</th></tr></thead><tbody>${impCounts.map(r=>`<tr><td>${esc(r.l)}</td><td class="n" style="color:${r.cr?'var(--bad)':'inherit'}">${r.cr}</td><td class="n">${r.co}</td></tr>`).join('')}</tbody></table></div>`:'<p>No route impediments were rated critical or of concern.</p>'}
+   ${reportPhotos(A,F)}
+   ${bariTotal?`<p>Evacuee size and weight: about ${bariTotal} bariatric patients are typically present; each needs a bariatric (MS48) sled and a larger team.</p>`:''}
+   <dl class="qa"><dt>Floor warden</dt><dd>${val(A.who.wardenRole)}</dd><dt>Emergency response team</dt><dd>${val(A.who.ertRole)}</dd><dt>Security</dt><dd>${val(A.who.securityRole)}</dd></dl></section>
+  <section class="rsec"><h2><span class="w">When</span>Self-extraction versus waiting for EMS</h2>
+   <p><b>Staff begin extraction without waiting for EMS when:</b> ${crit.length?esc(crit.join('; '))+'.':missing('No triggers defined')}</p>
+   <p><b>Staff wait for EMS when:</b> ${val(A.when.waitCriteria)}</p>
+   <p><b>Horizontal evacuation first:</b> ${ynTxt(A.when.horizontal)} · <b>Partner facility:</b> ${val(A.ems.partner)} · <b>Mutual aid:</b> ${ynTxt(A.ems.mutualAid)}</p>
+   </section>
+  <section class="rsec"><h2><span class="w">Where</span>Equipment, assembly and routes</h2>
+   ${whereRows?`<div class="tablewrap"><table><thead><tr><th>Floor</th><th>Equipment stored at</th><th>Near stair</th><th>Signed</th><th>Route posted</th></tr></thead><tbody>${whereRows}</tbody></table></div>`:''}
+   <dl class="qa"><dt>Ambulatory assembly area</dt><dd>${val(A.where.ambAssembly)}</dd><dt>Critical-care assembly area</dt><dd>${val(A.where.critAssembly)}</dd><dt>Equipped with</dt><dd>${sup.length?esc(sup.join(', ')):missing('Nothing recorded')}</dd><dt>Ambulance transfer point</dt><dd>${val(A.where.transfer)}</dd><dt>Routes posted on every floor</dt><dd>${ynTxt(A.where.routesPosted)}</dd><dt>Floor plans on file</dt><dd>${ynTxt(A.where.maps)}</dd></dl></section>
+  <section class="rsec"><h2><span class="w">How</span>Devices, rescuers and training</h2>
+   <div class="tablewrap"><table><thead><tr><th>Building</th><th>Floor</th><th class="n">Lvl</th><th class="n">Non-amb</th><th class="n">Sleds req.</th><th class="n">MS36/MS48</th><th class="n">On hand</th><th class="n">Gap</th><th class="n">Rescuers / shift</th><th class="n">Trained d/n</th></tr></thead><tbody>${floorsRows}</tbody></table></div>
+   <p><b>Stairwell crews:</b> in addition to the floor teams above, each building needs ${F.bs.map(x=>`${esc(x.b.name)} ${x.c.stairCrew}`).join(', ')} people per shift for the bucket brigade and exit transport, for a facility total of <b>${F.perShift}</b> trained rescuers on every shift.</p>
+   <p><b>Estimated evacuation time</b> with full equipment and crews, top floor down:<br>${bldTime}</p>
+   <p><b>Training to keep pace with turnover:</b> covering ${A.training.crews} crews means a roster of <b>${F.roster}</b> trained staff; with a ${Math.round(num(A.assumptions.buffer)*100)}% buffer the target is <b>${F.target}</b>${A.training.currentTrained!==''?` (currently ${esc(A.training.currentTrained)})`:''}. At ${esc(A.training.turnoverPct)}% annual turnover and a ${esc(A.training.refresherMonths)}-month refresher, plan about <b>${F.seats}</b> training seats a year in <b>${F.sessions}</b> classes, held <b>every ${F.cadence} month${F.cadence>1?'s':''}</b>.</p></section>
+  <section class="rsec"><h2><span class="w">Next</span>Priority actions</h2><div class="recs">${recs.length?recs.map(([p,t])=>`<div class="rec"><span class="pri p${p}">${['','Priority 1','Priority 2','Priority 3'][p]}</span><span>${esc(t)}</span></div>`).join(''):'<p>No gaps identified.</p>'}</div></section>
+  <p class="note">Method: sleds required = ${GROUP_TXT[groupOf(A)].method}, with at least ${A.assumptions.minSledsPerExit} per stairwell. ${groupOf(A)==='health'?`Bariatric (MS48) sleds use each care class’s % bariatric; classes marked critical care (${esc(A.assumptions.classes.filter(c=>c.crit&&grp(c)==='health').map(c=>c.name).join(', ')||'none')}) get an MS48 for every sled to make room for attached equipment.`:`Non-ambulatory occupants are assumed at ${Math.round(num(peopleRates(A).pct)*100)}% of those present, and ${Math.round(num(peopleRates(A).bari)*100)}% of them need a bariatric (MS48) sled. These are Ethos planning assumptions agreed with the facility.`} Time model: ${A.assumptions.positionMin} min to position stair crews, ${A.assumptions.landingMin} min per landing, ${A.assumptions.transportMin} min exit transport. Estimates support planning and do not replace a drill.</p>`}
+function viewReport(){const A=cur();
+  return`<div class="row" style="justify-content:space-between"><div class="pagehead"><div class="eyebrow">Report</div><h1>Readiness report</h1></div><div class="row noprint"><button class="btn primary" data-act="print">Print / save as PDF</button><button class="btn" data-act="dlReport">Share report</button><button class="btn" data-act="dlJson">Export data</button></div></div>
+  <p class="hint noprint" style="margin:0">Print / save as PDF opens the iPad print sheet, where you can print or save a PDF. Share report sends a self-contained web page by email, AirDrop or Files.</p>
+  <article class="report">${reportHTML(A)}</article>`}
+
+/* ============ Events ============ */
+function liveRefresh(){const A=cur();if(!A)return;
+  document.querySelectorAll('[data-live]').forEach(el=>{const t=el.dataset.live,p=el.dataset.p;
+    if(t==='fs')el.innerHTML=floorSummary(A,getPath(A,p));if(t==='fc')el.innerHTML=calcBox(floorCalc(A,getPath(A,p)));
+    if(t==='bc')el.innerHTML=bcBox(buildingCalc(A,getPath(A,p)));if(t==='tr')el.innerHTML=trBox(facilityCalc(A),A)});renderHeader()}
+function readInput(el){const t=el.dataset.t;if(t==='bool')return el.checked;let v=el.value;if(t==='num')v=v===''?'':num(v);if(t==='pct')v=num(v)/100;return v}
+document.addEventListener('input',e=>{const el=e.target;const A=cur();if(!A)return;
+  if(el.dataset.bslot!=null){const b=slotBuilding(A,+el.dataset.bslot);b.name=el.value;pruneBuilding(A,b);touch();return}
+  if(el.dataset.b&&el.tagName!=='SELECT'){setPath(A,el.dataset.b,readInput(el));touch();liveRefresh();
+    if(/\.level$/.test(el.dataset.b)){}}});
+document.addEventListener('change',async e=>{const el=e.target;const A=cur();if(!A)return;
+  if(el.dataset.photo){const file=el.files&&el.files[0];el.value='';if(!file)return;const fp=el.dataset.photo,k=el.dataset.k;const f=getPath(A,fp);
+    S.uploading=f.id+':'+k;S.keepScroll=true;render();
+    try{const blob=await shrink(file);if(!blob)throw{code:'unsupported_type'};const r={id:'p'+uid()+uid()};try{await photoPut(r.id,blob)}catch(e1){throw{code:'quota_or_state'}}PURL[r.id]=URL.createObjectURL(blob);
+      const ff=getPath(cur(),fp);ff.photos=ff.photos||{};(ff.photos[k]=ff.photos[k]||[]).push({id:r.id,at:new Date().toISOString()});touch();toast('Photo saved')}
+    catch(err){const c=err&&err.code;toast(c==='too_large'?'That photo is too large to save':c==='unsupported_type'?'That file type can’t be saved; use a JPEG or PNG photo':c==='quota_or_state'?'Photo didn’t save; device storage may be full':'Photo didn’t save; try again')}
+    S.uploading=null;S.keepScroll=true;render();return}
+  if(el.dataset.bfloors!=null){const i=+el.dataset.bfloors,n=el.value?parseInt(el.value,10):0;const b=slotBuilding(A,i);
+    const lost=b.floors.filter(f=>num(f.level)>=1&&num(f.level)>n&&floorHasData(f));
+    if(lost.length){S.pendingFloors={slot:i,n};pruneBuilding(A,b)}else{S.pendingFloors=null;applyFloors(A,b,n)}S.keepScroll=true;render();return}
+  if(el.tagName==='SELECT'&&el.id&&el.id.startsWith('add-')){if(!el.value)return;const fid=el.id.slice(4);for(const b of A.buildings)for(const f of b.floors)if(f.id===fid)f.units.push({k:el.value,beds:''});touch();S.keepScroll=true;render();return}
+  if(el.tagName==='SELECT'&&el.dataset.b){setPath(A,el.dataset.b,el.value);touch();liveRefresh();return}
+  if(el.dataset.arr){const arr=getPath(A,el.dataset.arr)||[];const i=arr.indexOf(el.value);if(el.checked&&i<0)arr.push(el.value);if(!el.checked&&i>=0)arr.splice(i,1);setPath(A,el.dataset.arr,arr);touch();return}
+  if(el.dataset.b&&(/\.level$/.test(el.dataset.b)||/\.crit$/.test(el.dataset.b))){S.keepScroll=true;render()}});
+document.addEventListener('toggle',e=>{const d=e.target;if(d.classList&&d.classList.contains('floor')){S.open[d.dataset.fid]=d.open;const n=d.querySelector('summary .note');if(n)n.textContent=d.open?'Close':'Open'}},true);
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.classList.contains('acard'))e.target.click()});
+document.addEventListener('click',async e=>{
+  const setb=e.target.closest('[data-set]');const A=cur();
+  if(setb&&A){const p=setb.dataset.set,v=JSON.parse(setb.dataset.v);setPath(A,p,getPath(A,p)===v?null:v);touch();
+    setb.parentElement.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(getPath(A,p)===JSON.parse(b.dataset.v))));liveRefresh();return}
+  const b=e.target.closest('[data-act]');if(!b)return;const act=b.dataset.act,v=b.dataset.v,p=b.dataset.p;
+  if(e.target.closest('[data-stop]')&&act==='open')return;
+  switch(act){
+   case'home':S.view='home';S.curId=null;S.confirmDel=null;render();window.scrollTo(0,0);break;
+   case'new':{const n=newAssessment();S.map[n.id]=n;S.curId=n.id;S.view='facility';scheduleWrite(n.id);render();window.scrollTo(0,0);break}
+   case'open':S.curId=v;S.view='facility';S.bIdx=0;render();window.scrollTo(0,0);break;
+   case'delAsk':S.confirmDel=v;render();break;
+   case'delNo':S.confirmDel=null;S.keepScroll=true;render();break;
+   case'delYes':{const gone=S.map[v]?photoIds(S.map[v]):[];dropAssets(gone);delete S.map[v];delete S.dirty[v];clearTimeout(saveT[v]);S.confirmDel=null;try{await dbDel(v)}catch(err){toast('Couldn’t delete from device storage')}render();break}
+   case'go':S.view=v;S.confirmDel=null;render();window.scrollTo(0,0);break;
+   case'inc':case'dec':{const cv=num(getPath(A,p));setPath(A,p,Math.max(0,cv+(act==='inc'?1:-1)));const inp=document.getElementById('i-'+p);if(inp)inp.value=getPath(A,p);touch();liveRefresh();break}
+   case'bld':S.bIdx=+v;render();break;
+   case'floorsYes':{const pf=S.pendingFloors;S.pendingFloors=null;const bb=A.buildings.find(x=>x.slot===pf.slot);if(bb)applyFloors(A,bb,pf.n);S.keepScroll=true;render();break}
+   case'delPhotoAsk':S.confirmDel='ph:'+v;S.keepScroll=true;render();break;
+   case'delPhotoYes':{const f=getPath(A,p),k=b.dataset.k;f.photos[k]=(f.photos[k]||[]).filter(x=>x.id!==v);if(!f.photos[k].length)delete f.photos[k];S.confirmDel=null;touch();S.keepScroll=true;render();dropAssets([v]);break}
+   case'floorsNo':S.pendingFloors=null;S.keepScroll=true;render();break;
+   case'addFloor':{const bl=getPath(A,p);const top=bl.floors.length?Math.max(...bl.floors.map(f=>num(f.level))):0;const f=newFloor(top+1);bl.floors.push(f);S.open[f.id]=true;touch();S.keepScroll=true;render();break}
+   case'addBasement':{const bl=getPath(A,p);const lo=bl.floors.length?Math.min(...bl.floors.map(f=>num(f.level))):2;const f=newFloor(lo-1);bl.floors.push(f);S.open[f.id]=true;touch();S.keepScroll=true;render();break}
+   case'dupFloor':{const bl=getPath(A,p);const src=bl.floors[+v];const top=Math.max(...bl.floors.map(f=>num(f.level)));const f=JSON.parse(JSON.stringify(src));f.id=uid();f.level=top+1;f.label='';f.notes='';f.photos={};bl.floors.push(f);S.open[f.id]=true;touch();S.keepScroll=true;render();toast('Copied to level '+f.level);break}
+   case'delFloorAsk':S.confirmDel=v;S.keepScroll=true;render();break;
+   case'delFloorYes':dropAssets(photoIds(getPath(A,p).floors[+v]));getPath(A,p).floors.splice(+v,1);S.confirmDel=null;touch();S.keepScroll=true;render();break;
+   case'delUnit':getPath(A,p).units.splice(+v,1);touch();S.keepScroll=true;render();break;
+   case'applyBari':{for(const c of A.assumptions.classes)if(!c.crit)c.bari=num(A.assumptions.obesityRate);touch();S.keepScroll=true;render();toast('Applied to all non-critical classes');break}
+   case'delClassAsk':S.confirmDel='cls:'+v;S.keepScroll=true;render();break;
+   case'delClassYes':{A.assumptions.classes=A.assumptions.classes.filter(c=>c.k!==v);for(const bb of A.buildings)for(const f of bb.floors)f.units=f.units.filter(u=>u.k!==v);S.confirmDel=null;touch();S.keepScroll=true;render();break}
+   case'restoreClasses':{const miss=missingClasses(A).map(c=>defClass(c));const order=CLASSES.map(c=>c.k);A.assumptions.classes=A.assumptions.classes.concat(miss).sort((a,b)=>{const ia=order.indexOf(a.k),ib=order.indexOf(b.k);return(ia<0?999:ia)-(ib<0?999:ib)});touch();S.keepScroll=true;render();toast('Restored '+miss.length+' care class'+(miss.length>1?'es':''));break}
+   case'resetAssume':A.assumptions=defaultAssumptions();touch();render();toast('Assumptions reset');break;
+   case'dlReport':toast('Preparing report…');await saveFile(fileBase(A)+' - Readiness Report.html',await embedPhotos(standaloneReport(A)));break;
+   case'dlJson':await exportBackup([A],fileBase(A)+' - assessment data.json');break;
+   case'backupAll':{const list=Object.values(S.map);if(!list.length){toast('No assessments to back up');break}await exportBackup(list,'Evacuation assessments backup '+new Date().toISOString().slice(0,10)+'.json');break}
+   case'print':window.print();break;
+   case'import':document.getElementById('importFile').click();break;
+  }});
+function fileBase(A){return(A.facility.name||'Assessment').replace(/[^\w\- ]+/g,'').trim()+' '+(A.facility.date||'')}
+async function saveFile(name,data,type){
+  const mime=type||(name.endsWith('.json')?'application/json':'text/html');const blob=new Blob([data],{type:mime});
+  try{const file=new File([blob],name,{type:mime});if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:name});return}}
+  catch(err){if(err&&err.name==='AbortError')return}
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);toast('File saved to Downloads')}
+async function blobToDataURL(b){return await new Promise(res=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=()=>res('');fr.readAsDataURL(b)})}
+async function dataURLToBlob(u){const r=await fetch(u);return await r.blob()}
+async function packPhotos(list){const out={};for(const A of list)for(const id of photoIds(A)){try{const b=await photoGet(id);if(b)out[id]=await blobToDataURL(b)}catch(e){}}return out}
+async function exportBackup(list,name){toast('Preparing file…');const photos=await packPhotos(list);
+  await saveFile(name,JSON.stringify({format:'ethos-evac-backup',version:1,exportedAt:new Date().toISOString(),assessments:list,photos}))}
+async function importAssessment(o){if(!o||!o.facility||!Array.isArray(o.buildings))throw 0;
+  if(S.map[o.id]&&(S.map[o.id].updatedAt||'')>(o.updatedAt||''))o.id=uid();norm(o);o.assumptions=Object.assign(defaultAssumptions(),o.assumptions||{});
+  S.map[o.id]=norm(o);await dbPut(o)}
+document.getElementById('importFile').addEventListener('change',async e=>{const file=e.target.files[0];e.target.value='';if(!file)return;
+  try{const o=JSON.parse(await file.text());let list,photos={};
+    if(o&&o.format==='ethos-evac-backup'){list=o.assessments||[];photos=o.photos||{}}else list=[o];
+    for(const id in photos){try{await photoPut(id,await dataURLToBlob(photos[id]))}catch(err){}}
+    let n=0;for(const a of list){await importAssessment(a);n++}
+    render();toast(n===1?'Imported '+(list[0].facility.name||'assessment'):'Imported '+n+' assessments')}
+  catch(err){toast('That file isn’t an assessment export')}});
+async function embedPhotos(html){const ids=[...new Set([...html.matchAll(/data-pid="([^"]+)"/g)].map(m=>m[1]))];
+  for(const id of ids){let data='';try{const b=await photoGet(id);if(b)data=await blobToDataURL(b)}catch(e){}
+    html=html.replace(new RegExp('src="[^"]*" data-pid="'+id.replace(/[^\w-]/g,'')+'"','g'),data?'src="'+data+'"':'src="" data-missing="1"')}return html}
+function standaloneReport(A){const css=[...document.querySelectorAll('style')].map(s=>s.textContent).join('\n');
+  return`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(A.facility.name||'Facility')} — Single-Flow Evacuation Readiness Report</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"><style>${css}
+  :root{color-scheme:light}body{background:#fff;padding:24px}.report{max-width:960px;margin:0 auto;border:0;padding:0}
+  @media print{body{padding:0}.rsec,.tablewrap,.bars,.verdict{break-inside:avoid}.report{gap:18px}}</style></head>
+  <body data-theme="light"><article class="report">${reportHTML(A)}</article></body></html>`.replace('<html>','<html data-theme="light">')}
+
+/* ============ Boot ============ */
+(async()=>{
+  try{idb=await openDB();const all=await dbAll();for(const A of all||[])S.map[A.id]=norm(A);setStatus('Saved on this device','ok')}
+  catch(e){setStatus('Storage unavailable — assessments won’t be kept','warn')}
+  render();
+  try{if(navigator.storage&&navigator.storage.persist)await navigator.storage.persist()}catch(e){}
+  if('serviceWorker' in navigator&&location.protocol.startsWith('http')){try{await navigator.serviceWorker.register('sw.js')}catch(e){}}
+})();
+</script>
+</body>
+</html>
